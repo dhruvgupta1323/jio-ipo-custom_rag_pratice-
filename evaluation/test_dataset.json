@@ -1,0 +1,45 @@
+[
+    {
+        "id": "q1",
+        "question": "What is the effective date of cancellation?",
+        "expected_answer": "The effective date of cancellation is 31 August 2026.",
+        "relevant_pages": [
+            1
+        ],
+        "expected_keywords": [
+            "31/08/2026",
+            "cancelled"
+        ]
+    },
+    {
+        "id": "q2",
+        "question": "Why was the GST registration cancelled?",
+        "expected_answer": "The registration was liable to be cancelled because bank details were not updated under Rule 10A.",
+        "relevant_pages": [
+            1
+        ],
+        "expected_keywords": [
+            "Rule 10A",
+            "Bank details"
+        ]
+    },
+    {
+        "id": "q3",
+        "question": "Which return must be furnished after cancellation?",
+        "expected_answer": "The document says that a registered person furnishing returns under section 39(1) must furnish GSTR-10 within three months of the cancellation order.",
+        "relevant_pages": [
+            1
+        ],
+        "expected_keywords": [
+            "GSTR-10",
+            "three months"
+        ]
+    },
+    {
+        "id": "q4",
+        "question": "What is the capital of Japan?",
+        "expected_answer": "The document does not provide this information.",
+        "relevant_pages": [],
+        "expected_keywords": []
+    }
+]

@@ -1,0 +1,86 @@
+[
+  {
+    "id": "jio_q1",
+    "question": "What are the issue dates and price band for the Jio Platforms Limited IPO?",
+    "expected_answer": "The issue date is 21 Oct 26 to 23 Oct 26, and the price range is ₹1065 to ₹1119 per share.",
+    "relevant_pages": [1],
+    "expected_keywords": ["21 Oct 26", "23 Oct 26", "1065", "1119"]
+  },
+  {
+    "id": "jio_q2",
+    "question": "What is the market lot and face value for the IPO?",
+    "expected_answer": "The market lot is 12 (based on upper band) and face value is 10.",
+    "relevant_pages": [1],
+    "expected_keywords": ["12", "10", "market lot"]
+  },
+  {
+    "id": "jio_q3",
+    "question": "What is the total issue size and which sector does the company operate in?",
+    "expected_answer": "The total issue size is ₹30,213 Crore and the sector is Mobile & Digital Services.",
+    "relevant_pages": [1],
+    "expected_keywords": ["30213", "Mobile", "Digital Services"]
+  },
+  {
+    "id": "jio_q4",
+    "question": "When was Jio Platforms Limited incorporated and how many customers does Reliance Jio Infocomm serve?",
+    "expected_answer": "Jio Platforms Limited was incorporated on November 15, 2019. Its subsidiary Reliance Jio Infocomm Limited served 533.3 million customers as of June 30, 2026.",
+    "relevant_pages": [1],
+    "expected_keywords": ["November 15, 2019", "533.3 million", "Reliance Jio"]
+  },
+  {
+    "id": "jio_q5",
+    "question": "What is Jio's wireless network coverage and how many patents were filed and granted?",
+    "expected_answer": "The wireless broadband network covers more than 99% of India's population. Jio and its subsidiaries filed 7,220 patent applications, of which 1,043 have been granted.",
+    "relevant_pages": [1],
+    "expected_keywords": ["99%", "7,220", "1,043"]
+  },
+  {
+    "id": "jio_q6",
+    "question": "What are the objects of the issue for this IPO?",
+    "expected_answer": "The objects are prepayment, in full or in part, of certain outstanding borrowings availed by the Material Subsidiary, namely RJIL, and general corporate purposes.",
+    "relevant_pages": [2],
+    "expected_keywords": ["Prepayment", "borrowings", "RJIL", "General corporate"]
+  },
+  {
+    "id": "jio_q7",
+    "question": "How much did revenue and Profit After Tax (PAT) increase in FY26 compared to FY25?",
+    "expected_answer": "Revenue increased by 16% and profit after tax (PAT) rose by 15% between the financial year ending March 31, 2026 and March 31, 2025.",
+    "relevant_pages": [2],
+    "expected_keywords": ["16%", "15%", "March 31, 2026", "March 31, 2025"]
+  },
+  {
+    "id": "jio_q8",
+    "question": "What were the Profit After Tax (PAT) and Total Income for the year ended 31-Mar-26?",
+    "expected_answer": "For 31-Mar-26, Profit After Tax was ₹30,052.7 Crore and Total Income was ₹149,759.1 Crore.",
+    "relevant_pages": [2],
+    "expected_keywords": ["30052", "149759"]
+  },
+  {
+    "id": "jio_q9",
+    "question": "What rating did Capstocks give to the Jio Platforms IPO and what was the score?",
+    "expected_answer": "Capstocks rated it '18 - Good' with a total score of 18 out of 30.",
+    "relevant_pages": [2],
+    "expected_keywords": ["18", "Good", "30"]
+  },
+  {
+    "id": "jio_q10",
+    "question": "What are the criteria points given for price and business risk in the rating procedure?",
+    "expected_answer": "Business Risk was given 3 points out of 5, and Price was given 6 points out of 10.",
+    "relevant_pages": [2],
+    "expected_keywords": ["Business Risk", "3", "Price", "6"]
+  },
+  {
+    "id": "jio_q11",
+    "question": "What is the final recommendation or remarks from Capstocks regarding subscribing to the IPO?",
+    "expected_answer": "The issue is fully priced. Investors with medium-to-long-term view can subscribe Jio Platforms Limited IPO.",
+    "relevant_pages": [3],
+    "expected_keywords": ["fully priced", "medium-to-long-term", "subscribe"]
+  },
+  {
+    "id": "jio_q12",
+    "question": "What is the capital of Australia?",
+    "expected_answer": "The provided document does not contain this information.",
+    "relevant_pages": [],
+    "expected_keywords": []
+  }
+]
