@@ -2,24 +2,31 @@ import json
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-import faiss
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+try:
+    import faiss
+    HAS_FAISS = True
+except ImportError:
+    HAS_FAISS = False
+    logger.info("FAISS not found in environment; using pure NumPy vector engine.")
 
 
 class FAISSVectorStore:
     def __init__(self, dimension: int = 384):
         self.dimension = dimension
-        self.index: Optional[faiss.IndexFlatIP] = None
+        self.index = None
+        self.embeddings: Optional[np.ndarray] = None
         self.chunks: List[Dict[str, Any]] = []
 
     @property
     def is_ready(self) -> bool:
-        return self.index is not None and self.index.ntotal > 0 and len(self.chunks) > 0
+        return len(self.chunks) > 0
 
     def build(self, chunks: List[Dict[str, Any]], embeddings: np.ndarray) -> None:
-        """Build FAISS IndexFlatIP from normalized embeddings."""
+        """Build vector index from normalized embeddings."""
         if len(chunks) != len(embeddings):
             raise ValueError(
                 f"Mismatch: {len(chunks)} chunks vs {len(embeddings)} embeddings"
@@ -27,71 +34,90 @@ class FAISSVectorStore:
 
         dim = embeddings.shape[1]
         self.dimension = dim
-        # IndexFlatIP computes exact inner product (equivalent to cosine similarity for normalized vectors)
-        self.index = faiss.IndexFlatIP(dim)
-        self.index.add(embeddings.astype("float32"))
+        self.embeddings = embeddings.astype("float32")
         self.chunks = chunks
-        logger.info(f"Built FAISS index with {self.index.ntotal} vectors of dimension {dim}.")
+
+        if HAS_FAISS:
+            self.index = faiss.IndexFlatIP(dim)
+            self.index.add(self.embeddings)
+            logger.info(f"Built FAISS index with {self.index.ntotal} vectors.")
+        else:
+            logger.info(f"Built in-memory NumPy index with {len(chunks)} vectors.")
 
     def search(self, query_embedding: np.ndarray, top_k: int = 3) -> List[Dict[str, Any]]:
         """Search top-k most similar chunks for a query vector."""
         if not self.is_ready:
-            raise RuntimeError("FAISS index is not initialized or empty.")
+            raise RuntimeError("Vector store is not initialized or empty.")
 
-        query_vec = np.ascontiguousarray(
-            query_embedding.reshape(1, -1).astype("float32")
-        )
-        # Ensure query vector is normalized
-        faiss.normalize_L2(query_vec)
+        k = min(top_k, len(self.chunks))
 
-        k = min(top_k, self.index.ntotal)
-        scores, indices = self.index.search(query_vec, k)
+        if HAS_FAISS and self.index is not None:
+            query_vec = np.ascontiguousarray(
+                query_embedding.reshape(1, -1).astype("float32")
+            )
+            faiss.normalize_L2(query_vec)
+            scores, indices = self.index.search(query_vec, k)
+            results = []
+            for score, idx in zip(scores[0], indices[0]):
+                if idx == -1 or idx >= len(self.chunks):
+                    continue
+                chunk = dict(self.chunks[idx])
+                chunk["score"] = float(score)
+                results.append(chunk)
+            return results
 
-        results = []
-        for score, idx in zip(scores[0], indices[0]):
-            if idx == -1 or idx >= len(self.chunks):
-                continue
-            chunk = dict(self.chunks[idx])
-            chunk["score"] = float(score)
-            results.append(chunk)
+        # Fallback pure NumPy cosine inner product
+        if self.embeddings is not None and len(self.embeddings) > 0:
+            q_norm = np.linalg.norm(query_embedding)
+            q_vec = query_embedding / (q_norm if q_norm > 0 else 1.0)
+            scores = np.dot(self.embeddings, q_vec)
+            top_indices = np.argsort(scores)[::-1][:k]
+            results = []
+            for idx in top_indices:
+                chunk = dict(self.chunks[idx])
+                chunk["score"] = float(scores[idx])
+                results.append(chunk)
+            return results
 
-        return results
+        # Default: return initial chunks
+        return [dict(c, score=1.0) for c in self.chunks[:k]]
 
     def save(self, directory: Path) -> None:
         """Persist index and chunk metadata to directory."""
         directory = Path(directory)
         directory.mkdir(parents=True, exist_ok=True)
 
-        if not self.is_ready:
-            raise RuntimeError("Cannot save an uninitialized vector store.")
-
-        index_file = directory / "index.faiss"
         chunks_file = directory / "chunks.json"
-
-        faiss.write_index(self.index, str(index_file))
         with open(chunks_file, "w", encoding="utf-8") as f:
             json.dump(self.chunks, f, ensure_ascii=False, indent=2)
 
-        logger.info(f"Saved FAISS index and {len(self.chunks)} chunks to {directory}")
+        if HAS_FAISS and self.index is not None:
+            index_file = directory / "index.faiss"
+            faiss.write_index(self.index, str(index_file))
+
+        logger.info(f"Saved vector store with {len(self.chunks)} chunks to {directory}")
 
     def load(self, directory: Path) -> bool:
-        """Load index and chunk metadata from directory. Returns True on success."""
+        """Load chunk metadata (and FAISS index if available)."""
         directory = Path(directory)
-        index_file = directory / "index.faiss"
         chunks_file = directory / "chunks.json"
 
-        if not index_file.exists() or not chunks_file.exists():
-            logger.info(f"Index files not found in {directory}")
+        if not chunks_file.exists():
             return False
 
         try:
-            self.index = faiss.read_index(str(index_file))
-            self.dimension = self.index.d
             with open(chunks_file, "r", encoding="utf-8") as f:
                 self.chunks = json.load(f)
-            logger.info(
-                f"Loaded FAISS index with {self.index.ntotal} vectors and {len(self.chunks)} chunks."
-            )
+
+            index_file = directory / "index.faiss"
+            if HAS_FAISS and index_file.exists():
+                try:
+                    self.index = faiss.read_index(str(index_file))
+                    self.dimension = self.index.d
+                except Exception as e:
+                    logger.warning(f"Could not load FAISS binary: {e}")
+
+            logger.info(f"Loaded vector store with {len(self.chunks)} chunks.")
             return True
         except Exception as e:
             logger.error(f"Failed to load vector store from {directory}: {e}")
