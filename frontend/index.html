@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <!-- Top Navigation Header -->
@@ -182,13 +183,22 @@
                     <div id="resultsCard" class="card result-card glass-card">
                         <div class="result-header">
                             <div class="header-left">
-                                <h3>Generated Answer</h3>
+                                <div class="title-with-icon">
+                                    <span class="header-sparkle">✨</span>
+                                    <h3>Generated Answer</h3>
+                                </div>
                                 <div id="answerMetaPills" class="answer-meta-pills">
                                     <!-- Dynamic latency & model pill -->
                                 </div>
                             </div>
-                            <div id="guardrailStatusBadge">
-                                <span class="badge neutral-badge">Ready</span>
+                            <div class="header-right">
+                                <button type="button" id="copyAnswerBtn" class="copy-btn hidden" title="Copy answer to clipboard">
+                                    <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <span class="copy-text">Copy</span>
+                                </button>
+                                <div id="guardrailStatusBadge">
+                                    <span class="badge neutral-badge">Ready</span>
+                                </div>
                             </div>
                         </div>
 

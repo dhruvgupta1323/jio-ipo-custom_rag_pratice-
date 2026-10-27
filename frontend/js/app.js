@@ -261,51 +261,82 @@ function renderAnswer(data) {
         guardrailStatusBadge.innerHTML = `<span class="badge warning-badge">⚠️ Citation Warning</span>`;
     }
 
-    // 3. Highlighted answer with clickable [Page X] tags
-    let formattedAnswer = escapeHtml(data.answer);
-    formattedAnswer = formattedAnswer.replace(
-        /\[Page\s+(\d+)\]/gi,
-        (match, pageNum) => `<span class="citation-tag" onclick="jumpToPage(${pageNum})" title="Click to view Page ${pageNum} in Document Explorer">[Page ${pageNum}]</span>`
-    );
+    // 3. Show and configure Copy Button
+    const copyBtn = document.getElementById("copyAnswerBtn");
+    if (copyBtn) {
+        copyBtn.classList.remove("hidden");
+        copyBtn.onclick = () => copyAnswerToClipboard(data.answer);
+    }
 
-    answerContent.innerHTML = formattedAnswer;
+    // 4. Highlighted answer with rich Markdown & clickable [Page X] tags
+    answerContent.innerHTML = formatMarkdownAnswer(data.answer);
 
-    // 4. Guardrail Audit Box
+    // 5. Guardrail Audit Box - Executive 4-Grid Dashboard
     guardrailAuditBox.classList.remove("hidden");
     const outputWarnText = g.output_warnings.length > 0 ? g.output_warnings.join(", ") : "None";
     auditDetails.innerHTML = `
-        <div class="audit-item">
-            <strong>Input Safety:</strong> 
-            <span class="${g.allowed ? 'text-success' : 'text-danger'}">${g.allowed ? 'Passed (Risk: ' + g.risk + ')' : 'Blocked (' + g.reason + ')'}</span>
-        </div>
-        <div class="audit-item">
-            <strong>Cited Pages:</strong> 
-            <span>${g.cited_pages.length > 0 ? g.cited_pages.map(p => `Page ${p}`).join(', ') : 'None'}</span>
-        </div>
-        <div class="audit-item">
-            <strong>Retrieved Pages:</strong> 
-            <span>${g.available_pages.length > 0 ? g.available_pages.map(p => `Page ${p}`).join(', ') : 'None'}</span>
-        </div>
-        <div class="audit-item">
-            <strong>Output Consistency:</strong> 
-            <span class="${g.output_passed ? 'text-success' : 'text-warning'}">${g.output_passed ? 'Verified' : 'Flagged: ' + outputWarnText}</span>
+        <div class="audit-grid">
+            <div class="audit-card">
+                <div class="audit-card-icon">🛡️</div>
+                <div class="audit-card-body">
+                    <span class="audit-card-label">Input Guardrail</span>
+                    <span class="audit-card-val ${g.allowed ? 'status-pass' : 'status-fail'}">
+                        ${g.allowed ? 'Passed (Risk: ' + g.risk + ')' : 'Blocked (' + g.reason + ')'}
+                    </span>
+                </div>
+            </div>
+            <div class="audit-card">
+                <div class="audit-card-icon">📄</div>
+                <div class="audit-card-body">
+                    <span class="audit-card-label">Citations in Output</span>
+                    <span class="audit-card-val">
+                        ${g.cited_pages.length > 0 ? g.cited_pages.map(p => `<button type="button" class="mini-page-pill" onclick="jumpToPage(${p})">Page ${p}</button>`).join(' ') : '<span class="text-muted">None cited</span>'}
+                    </span>
+                </div>
+            </div>
+            <div class="audit-card">
+                <div class="audit-card-icon">📚</div>
+                <div class="audit-card-body">
+                    <span class="audit-card-label">Retrieved Evidence</span>
+                    <span class="audit-card-val">
+                        ${g.available_pages.length > 0 ? g.available_pages.map(p => `<button type="button" class="mini-page-pill" onclick="jumpToPage(${p})">Page ${p}</button>`).join(' ') : '<span class="text-muted">None</span>'}
+                    </span>
+                </div>
+            </div>
+            <div class="audit-card">
+                <div class="audit-card-icon">🎯</div>
+                <div class="audit-card-body">
+                    <span class="audit-card-label">Factuality Status</span>
+                    <span class="audit-card-val ${g.output_passed ? 'status-pass' : 'status-warn'}">
+                        ${g.output_passed ? '100% Grounded' : 'Warning: ' + outputWarnText}
+                    </span>
+                </div>
+            </div>
         </div>
     `;
 
-    // 5. Retrieved Sources List
+    // 6. Retrieved Sources List with similarity progress bars
     if (data.sources && data.sources.length > 0) {
         sourcesSection.classList.remove("hidden");
         sourcesCount.textContent = data.sources.length;
 
         sourcesList.innerHTML = data.sources.map(src => {
             const similarityPercent = (src.score * 100).toFixed(1);
+            const barWidth = Math.min(100, Math.max(12, Math.round(src.score * 100)));
             return `
                 <div class="source-card">
-                    <div class="source-meta">
-                        <span class="source-page-badge" onclick="jumpToPage(${src.page})" style="cursor: pointer;" title="Jump to Page ${src.page}">
-                            📄 Page ${src.page} (Chunk #${src.chunk_id})
-                        </span>
-                        <span class="source-score">Cosine Similarity: ${similarityPercent}%</span>
+                    <div class="source-card-header">
+                        <button type="button" class="source-page-badge" onclick="jumpToPage(${src.page})" title="Jump to Page ${src.page} in Explorer">
+                            <span class="source-icon">📄</span>
+                            <span>Page ${src.page}</span>
+                            <span class="chunk-badge">Chunk #${src.chunk_id}</span>
+                        </button>
+                        <div class="source-score-wrapper">
+                            <div class="score-bar-track">
+                                <div class="score-bar-fill" style="width: ${barWidth}%;"></div>
+                            </div>
+                            <span class="source-score-text">${similarityPercent}% Match</span>
+                        </div>
                     </div>
                     <div class="source-text">${escapeHtml(src.text)}</div>
                 </div>
@@ -315,6 +346,62 @@ function renderAnswer(data) {
         sourcesSection.classList.add("hidden");
     }
 }
+
+function formatMarkdownAnswer(rawText) {
+    if (!rawText) return "";
+    let html = "";
+    if (window.marked && typeof window.marked.parse === "function") {
+        html = window.marked.parse(rawText, { breaks: true, gfm: true });
+    } else {
+        let text = escapeHtml(rawText);
+        // Headings
+        text = text.replace(/^### (.*$)/gim, '<h4 class="md-h4">$1</h4>');
+        text = text.replace(/^## (.*$)/gim, '<h3 class="md-h3">$1</h3>');
+        text = text.replace(/^# (.*$)/gim, '<h2 class="md-h2">$1</h2>');
+        // Bold: **text**
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong class="md-strong">$1</strong>');
+        // Italic: *text*
+        text = text.replace(/\*(.*?)\*/g, '<em class="md-em">$1</em>');
+        // Unordered lists
+        text = text.replace(/^\s*[\*\-]\s+(.*)$/gim, '<li class="md-li">$1</li>');
+        text = text.replace(/(<li.*<\/li>)/gims, '<ul class="md-ul">$1</ul>');
+        // Paragraphs
+        text = text.replace(/\n\n+/g, '</p><p>');
+        html = `<p>${text}</p>`;
+    }
+
+    // Replace [Page N] tags with interactive glowing pill buttons
+    html = html.replace(
+        /\[Page\s+(\d+)\]/gi,
+        (match, pageNum) => `
+            <button type="button" class="citation-pill" onclick="jumpToPage(${pageNum})" title="Jump to Page ${pageNum} in Document Explorer">
+                <span class="pill-dot"></span>
+                <span class="pill-text">Page ${pageNum}</span>
+                <span class="pill-arrow">↗</span>
+            </button>
+        `
+    );
+
+    return html;
+}
+
+window.copyAnswerToClipboard = function(text) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        const copyBtn = document.getElementById("copyAnswerBtn");
+        if (!copyBtn) return;
+        const copyText = copyBtn.querySelector(".copy-text");
+        const originalText = copyText.textContent;
+        copyText.textContent = "Copied! ✨";
+        copyBtn.classList.add("copied");
+        setTimeout(() => {
+            copyText.textContent = originalText;
+            copyBtn.classList.remove("copied");
+        }, 2200);
+    }).catch(err => {
+        console.warn("Could not copy to clipboard:", err);
+    });
+};
 
 function setLoading(isLoading) {
     const btnText = submitBtn.querySelector(".btn-text");
