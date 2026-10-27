@@ -14,25 +14,32 @@ class EmbeddingService:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(EmbeddingService, cls).__new__(cls)
-            try:
-                logger.info(f"Loading embedding model: {settings.embedding_model}")
-                cls._model = SentenceTransformer(settings.embedding_model)
-            except Exception as e:
-                logger.error(f"Error loading embedding model {settings.embedding_model}: {e}")
-                raise
+            cls._model = None
         return cls._instance
 
     @property
     def model(self) -> SentenceTransformer:
         if self._model is None:
+            import os
+            os.environ["TOKENIZERS_PARALLELISM"] = "false"
+            os.environ["OMP_NUM_THREADS"] = "1"
+            os.environ["MKL_NUM_THREADS"] = "1"
+            try:
+                import torch
+                torch.set_num_threads(1)
+            except Exception:
+                pass
+            logger.info(f"Lazy-loading embedding model: {settings.embedding_model}")
             self._model = SentenceTransformer(settings.embedding_model)
         return self._model
 
     @property
     def dimension(self) -> int:
-        if hasattr(self.model, "get_embedding_dimension"):
-            return self.model.get_embedding_dimension()
-        return self.model.get_sentence_embedding_dimension()
+        if self._model is not None:
+            if hasattr(self._model, "get_embedding_dimension"):
+                return self._model.get_embedding_dimension()
+            return self._model.get_sentence_embedding_dimension()
+        return 384
 
     def embed_texts(self, texts: List[str]) -> np.ndarray:
         """

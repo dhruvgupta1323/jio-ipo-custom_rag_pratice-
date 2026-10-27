@@ -1,17 +1,12 @@
-
 fastapi
 uvicorn[standard]
 python-multipart
 pydantic-settings
 python-dotenv
 pymupdf
-langchain
-langchain-text-splitters
-langchain-google-genai
 google-genai
 sentence-transformers
 faiss-cpu
 numpy
 pytest
 httpx
-ragas
