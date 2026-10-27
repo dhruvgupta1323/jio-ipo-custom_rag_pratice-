@@ -8,6 +8,7 @@ pymupdf
 langchain
 langchain-text-splitters
 langchain-google-genai
+google-genai
 sentence-transformers
 faiss-cpu
 numpy
